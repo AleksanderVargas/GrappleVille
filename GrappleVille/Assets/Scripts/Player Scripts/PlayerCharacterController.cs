@@ -6,12 +6,10 @@ public class PlayerCharacterController : MonoBehaviour
 {
     [SerializeField] private State state;
     [SerializeField] private GameObject debugHitPoint;
-    [SerializeField] private GameObject grapple;
     [SerializeField] private const float NORMAL_FOV = 60f;
     [SerializeField] private const float GRAPPLE_FOV = 100f;
 
     //Public
-    public GameObject Camera;
     public float mouseSensitivity = 500f;
     public float movementSpeed = 10f;
     public float grappleShootingSpeed = 140f;
@@ -27,6 +25,10 @@ public class PlayerCharacterController : MonoBehaviour
 
     //Private
     private CharacterController controller;
+    private ParticleSystem zoomParticleSystem;
+    private GameObject particleSystemReference;
+    private GameObject grapple;
+    private GameObject Camera;
     private CameraFOV cameraFOV;
     private Transform debugHitPointTransform;
     private float grappleSize = 0f;
@@ -50,8 +52,15 @@ public class PlayerCharacterController : MonoBehaviour
 
     private void Awake()
     {
+        //Initialize Variables
         controller = GetComponent<CharacterController>();
+        Camera = transform.Find("Main Camera").gameObject;
         cameraFOV = Camera.GetComponent<CameraFOV>();
+        grapple = transform.Find("Grapple").gameObject;
+        particleSystemReference = transform.Find("ParticleSystemReference").gameObject;
+        zoomParticleSystem = particleSystemReference.transform.Find("Zooming Particles").GetComponent<ParticleSystem>();
+
+        //Initialize Scene
         SetCameraFOV(NORMAL_FOV);
         debugHitPointTransform = debugHitPoint.transform;
         SetGrappleActive(false);
@@ -84,8 +93,14 @@ public class PlayerCharacterController : MonoBehaviour
     {
         grapple.SetActive(b);
     }
+    private void StartGrappling()
+    {
+        state = State.Grappling;
+        zoomParticleSystem.Play();
+    }
     private void StopGrappling()
     {
+        zoomParticleSystem.Stop();
         SetGrappleActive(false);
         SetCameraFOV(NORMAL_FOV);
         state = State.Normal;
@@ -147,12 +162,14 @@ public class PlayerCharacterController : MonoBehaviour
     private void HandleShootingGrapple()
     {
         grapple.transform.LookAt(grapplePosition);
+        particleSystemReference.transform.LookAt(grapplePosition);
         grappleSize += grappleShootingSpeed * Time.deltaTime;
         grapple.transform.localScale = new Vector3(1, 1, grappleSize);
 
         if (grappleSize >= Vector3.Distance(transform.position, grapplePosition))
         {
-            state = State.Grappling;
+            //START GRAPPLING
+            StartGrappling();
         }
 
     }
@@ -192,6 +209,8 @@ public class PlayerCharacterController : MonoBehaviour
         //Assert Grapple positioning
         grapple.transform.LookAt(grapplePosition);
         grapple.transform.localScale = new Vector3(1, 1, grappleDist);
+        //Assert Zooming Particle affect is facing proper direction
+        particleSystemReference.transform.LookAt(grapplePosition);
         //Get the normalized ("1'ed" vector) direction
         Vector3 grappleDir = (grapplePosition - transform.position).normalized;
         float grappleSpeed = Mathf.Clamp(grappleDist, minGrappleSpeed, maxGrappleSpeed);
