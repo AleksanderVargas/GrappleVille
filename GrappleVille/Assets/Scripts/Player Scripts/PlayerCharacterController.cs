@@ -18,6 +18,7 @@ public class PlayerCharacterController : MonoBehaviour
     public float minGrappleSpeed = 10;
     public float maxGrappleSpeed = 50f;
     public float grappleTime = 3f;
+    public float maxGrappleDist = 50f;
     public float minGrappleDist = 1.5f;
     public float jumpForce = 10f;
     public float gravity = -9.18f;
@@ -144,7 +145,7 @@ public class PlayerCharacterController : MonoBehaviour
         if (aiming)
         {
             //Check if There is a collidable instance in front of the players aim
-            if (Physics.Raycast(Camera.transform.position, Camera.transform.forward, out RaycastHit raycastHit))
+            if (Physics.Raycast(Camera.transform.position, Camera.transform.forward, out RaycastHit raycastHit, maxGrappleDist))
             {
                 debugHitPointTransform.position = raycastHit.point;
             }
